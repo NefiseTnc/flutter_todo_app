@@ -1,52 +1,49 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_todo_app/constants/app_color.dart';
-import 'package:flutter_todo_app/data/task_data.dart';
+import 'package:flutter_todo_app/controllers/task_controller.dart';
 import 'package:flutter_todo_app/views/calender_mode_screen.dart';
 import 'package:flutter_todo_app/views/create_task_screen.dart';
-import 'package:flutter_todo_app/views/done_task_screen.dart';
 import 'package:get/get.dart';
 import 'package:intl/intl.dart';
+import 'done_task_screen.dart';
 
-class HomeScreen extends StatefulWidget {
-  const HomeScreen({Key? key}) : super(key: key);
+class HomeScreen extends StatelessWidget {
+  HomeScreen({Key? key}) : super(key: key);
 
-  @override
-  State<HomeScreen> createState() => _HomeScreenState();
-}
-
-class _HomeScreenState extends State<HomeScreen> {
-  bool isSelected = false;
+  final TaskController controller = Get.put(TaskController());
 
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      body: Container(
-        width: Get.width,
-        height: Get.height,
-        decoration: BoxDecoration(
-          gradient: LinearGradient(
-            begin: Alignment.topRight,
-            end: Alignment.bottomLeft,
-            colors: [
-              const Color(0xffFEA64C).withOpacity(.2),
-              const Color(0xff254DDE).withOpacity(.2),
-              Colors.white,
-            ],
-          ),
-        ),
-        child: SafeArea(
-          child: Padding(
-            padding: const EdgeInsets.symmetric(horizontal: 20.0),
-            child: Column(
-              children: [
-                _emptyBox(),
-                appBarText(),
-                _emptyBox(),
-                Expanded(
-                    child: Stack(
-                  children: [taskListview(), bottomButtons()],
-                )),
+      body: Obx(
+        () => Container(
+          width: Get.width,
+          height: Get.height,
+          decoration: BoxDecoration(
+            gradient: LinearGradient(
+              begin: Alignment.topRight,
+              end: Alignment.bottomLeft,
+              colors: [
+                const Color(0xffFEA64C).withOpacity(.2),
+                const Color(0xff254DDE).withOpacity(.2),
+                Colors.white,
               ],
+            ),
+          ),
+          child: SafeArea(
+            child: Padding(
+              padding: const EdgeInsets.symmetric(horizontal: 20.0),
+              child: Column(
+                children: [
+                  _emptyBox(),
+                  appBarText(),
+                  _emptyBox(),
+                  Expanded(
+                      child: Stack(
+                    children: [taskListsview(), bottomButtons()],
+                  )),
+                ],
+              ),
             ),
           ),
         ),
@@ -61,11 +58,11 @@ class _HomeScreenState extends State<HomeScreen> {
     );
   }
 
-  Widget taskListview() {
+  Widget taskListsview() {
     return ListView.builder(
-      itemCount: taskList.length,
+      itemCount: controller.taskList.length,
       itemBuilder: (context, index) {
-        var task = taskList[index];
+        var task = controller.taskList[index];
         return Container(
           margin: const EdgeInsets.only(bottom: 15),
           height: Get.height * .08,
@@ -73,20 +70,84 @@ class _HomeScreenState extends State<HomeScreen> {
               color: Colors.white54,
               borderRadius: BorderRadius.all(Radius.circular(10))),
           child: ListTile(
+            onTap: () {
+              Get.defaultDialog(
+                  title: "",
+                  content: SizedBox(
+                    width: Get.width * .9,
+                    height: Get.height * .4,
+                    //color: Colors.amber,
+                    child: Padding(
+                      padding: const EdgeInsets.symmetric(horizontal: 16.0),
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.center,
+                        mainAxisAlignment: MainAxisAlignment.start,
+                        children: [
+                          Image.asset(
+                            "assets/icons/${task.iconUrl}",
+                          ),
+                          _emptyBox(),
+                          Text(
+                            task.name ?? "",
+                            style: const TextStyle(fontWeight: FontWeight.bold),
+                          ),
+                          const SizedBox(
+                            height: 10,
+                          ),
+                          Text(
+                              "${DateFormat.MMMMd().format(task.dateTime ?? DateTime.now())}  ${DateFormat.Hm().format(task.dateTime ?? DateTime.now())}"),
+                          _emptyBox(),
+                          const Text("Description",
+                              style: TextStyle(fontWeight: FontWeight.bold)),
+                          const SizedBox(
+                            height: 10,
+                          ),
+                          Expanded(child: Text(task.description ?? "")),
+                          const Spacer(),
+                          GestureDetector(
+                            onTap: () {
+                              Get.back();
+                            },
+                            child: Container(
+                              width: Get.width * .3,
+                              height: Get.width * .094,
+                              decoration: const BoxDecoration(
+                                  gradient: LinearGradient(
+                                      begin: Alignment.bottomLeft,
+                                      end: Alignment.topRight,
+                                      colors: [
+                                        Color(0xff254DDE),
+                                        Color(0xff00FFFF),
+                                      ]),
+                                  borderRadius:
+                                      BorderRadius.all(Radius.circular(15))),
+                              child: const Center(
+                                child: Text(
+                                  "Done",
+                                  style: TextStyle(
+                                      color: Colors.white,
+                                      fontWeight: FontWeight.bold),
+                                ),
+                              ),
+                            ),
+                          ),
+                        ],
+                      ),
+                    ),
+                  ));
+            },
             onLongPress: () {
-              setState(() {
-                isSelected = !isSelected;
-              });
+              controller.isSelected.value = true;
             },
             leading: Image.asset(
               "assets/icons/${task.iconUrl}",
             ),
             title: Text(
-              task.name,
+              task.name ?? "",
               overflow: TextOverflow.ellipsis,
               maxLines: 2,
             ),
-            trailing: isSelected
+            trailing: controller.isSelected.value
                 ? Container(
                     width: Get.width * .06,
                     height: Get.width * .06,
@@ -103,7 +164,7 @@ class _HomeScreenState extends State<HomeScreen> {
                             blurRadius: 4)
                       ],
                     ),
-                    child: task.isDone
+                    child: task.isDone == 1
                         ? Image.asset("assets/icons/ic_selected.png")
                         : const SizedBox(),
                   )
@@ -111,11 +172,12 @@ class _HomeScreenState extends State<HomeScreen> {
                     mainAxisAlignment: MainAxisAlignment.center,
                     children: [
                       Text(
-                        DateFormat.MMMd().format(task.dateTime),
+                        DateFormat.MMMd()
+                            .format(task.dateTime ?? DateTime.now()),
                         style: const TextStyle(fontWeight: FontWeight.bold),
                       ),
                       Text(
-                        DateFormat.Hm().format(task.dateTime),
+                        DateFormat.Hm().format(task.dateTime ?? DateTime.now()),
                         style: const TextStyle(fontSize: 12),
                       ),
                     ],
@@ -136,7 +198,9 @@ class _HomeScreenState extends State<HomeScreen> {
         child: Column(
           children: [
             Expanded(
-              child: isSelected ? selectedButtons() : unSelectedBottons(),
+              child: controller.isSelected.value
+                  ? selectedButtons()
+                  : unSelectedBottons(),
             ),
             _emptyBox(),
           ],
@@ -152,7 +216,7 @@ class _HomeScreenState extends State<HomeScreen> {
       children: [
         GestureDetector(
           onTap: () {
-            Get.to(() => const DoneTaskScreen());
+            Get.to(() =>  DoneTaskScreen());
           },
           child: Container(
               width: Get.width * .12,
@@ -178,7 +242,7 @@ class _HomeScreenState extends State<HomeScreen> {
         ),
         GestureDetector(
           onTap: () {
-            Get.to(() => const CalendarModeScreen());
+            Get.to(() =>  CalendarModeScreen());
           },
           child: Container(
             width: Get.width * .15,
@@ -199,7 +263,7 @@ class _HomeScreenState extends State<HomeScreen> {
         ),
         GestureDetector(
           onTap: () {
-            Get.to(const CreateTaskScreen());
+            Get.to( const CreateTaskScreen());
           },
           child: Container(
             width: Get.width * .12,
@@ -234,9 +298,7 @@ class _HomeScreenState extends State<HomeScreen> {
       children: [
         GestureDetector(
           onTap: () {
-            setState(() {
-              isSelected = false;
-            });
+            controller.isSelected.value = false;
           },
           child: Container(
               width: Get.width * .14,

@@ -1,52 +1,50 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_todo_app/constants/app_color.dart';
-import 'package:flutter_todo_app/data/task_data.dart';
 import 'package:get/get.dart';
 import 'package:intl/intl.dart';
+import '../controllers/task_controller.dart';
 
-class DoneTaskScreen extends StatefulWidget {
-  const DoneTaskScreen({Key? key}) : super(key: key);
+class DoneTaskScreen extends StatelessWidget {
+  DoneTaskScreen({Key? key}) : super(key: key);
 
-  @override
-  State<DoneTaskScreen> createState() => _DoneTaskScreenState();
-}
-
-class _DoneTaskScreenState extends State<DoneTaskScreen> {
-  bool isSelected = false;
-
-  var doneTaskList = taskList.where((element) => element.isDone).toList();
+  final TaskController controller = Get.find();
 
   @override
   Widget build(BuildContext context) {
+    controller.getDoneTaskDatas();
     return Scaffold(
-      body: Container(
-        width: Get.width,
-        height: Get.height,
-        decoration: BoxDecoration(
-          gradient: LinearGradient(
-            begin: Alignment.topRight,
-            end: Alignment.bottomLeft,
-            colors: [
-              const Color(0xffFEA64C).withOpacity(.2),
-              const Color(0xff254DDE).withOpacity(.2),
-              Colors.white,
-            ],
-          ),
-        ),
-        child: SafeArea(
-          child: Padding(
-            padding: const EdgeInsets.symmetric(horizontal: 20.0),
-            child: Column(
-              children: [
-                _emptyBox(),
-                appBarText(),
-                _emptyBox(),
-                Expanded(
-                  child: taskListview(),
-                ),
-                isSelected ? selectedButtons() : const SizedBox(),
-                _emptyBox(),
+      body: Obx(
+        () => Container(
+          width: Get.width,
+          height: Get.height,
+          decoration: BoxDecoration(
+            gradient: LinearGradient(
+              begin: Alignment.topRight,
+              end: Alignment.bottomLeft,
+              colors: [
+                const Color(0xffFEA64C).withOpacity(.2),
+                const Color(0xff254DDE).withOpacity(.2),
+                Colors.white,
               ],
+            ),
+          ),
+          child: SafeArea(
+            child: Padding(
+              padding: const EdgeInsets.symmetric(horizontal: 20.0),
+              child: Column(
+                children: [
+                  _emptyBox(),
+                  appBarText(),
+                  _emptyBox(),
+                  Expanded(
+                    child: taskListview(),
+                  ),
+                  controller.isSelected.value
+                      ? selectedButtons()
+                      : const SizedBox(),
+                  _emptyBox(),
+                ],
+              ),
             ),
           ),
         ),
@@ -74,9 +72,9 @@ class _DoneTaskScreenState extends State<DoneTaskScreen> {
 
   Widget taskListview() {
     return ListView.builder(
-      itemCount: doneTaskList.length,
+      itemCount: controller.doneTaskList.length,
       itemBuilder: (context, index) {
-        var task = doneTaskList[index];
+        var task = controller.doneTaskList[index];
         return Container(
           margin: const EdgeInsets.only(bottom: 15),
           height: Get.height * .08,
@@ -85,22 +83,20 @@ class _DoneTaskScreenState extends State<DoneTaskScreen> {
               borderRadius: BorderRadius.all(Radius.circular(10))),
           child: ListTile(
             onLongPress: () {
-              setState(() {
-                isSelected = !isSelected;
-              });
+              controller.isSelected.value = !controller.isSelected.value;
             },
             leading: Image.asset(
               "assets/icons/${task.iconUrl}",
             ),
             title: Text(
-              task.name,
+              task.name ?? "",
               overflow: TextOverflow.ellipsis,
               maxLines: 2,
               style: const TextStyle(
                   decoration: TextDecoration.lineThrough,
                   decorationColor: Colors.pink),
             ),
-            trailing: isSelected
+            trailing: controller.isSelected.value
                 ? Container(
                     width: Get.width * .06,
                     height: Get.width * .06,
@@ -117,7 +113,7 @@ class _DoneTaskScreenState extends State<DoneTaskScreen> {
                             blurRadius: 4)
                       ],
                     ),
-                    child: task.isDone
+                    child: task.isDone == 1
                         ? Image.asset("assets/icons/ic_selected.png")
                         : const SizedBox(),
                   )
@@ -125,14 +121,15 @@ class _DoneTaskScreenState extends State<DoneTaskScreen> {
                     mainAxisAlignment: MainAxisAlignment.center,
                     children: [
                       Text(
-                        DateFormat.MMMd().format(task.dateTime),
+                        DateFormat.MMMd()
+                            .format(task.dateTime ?? DateTime.now()),
                         style: const TextStyle(
                             fontWeight: FontWeight.bold,
                             decoration: TextDecoration.lineThrough,
                             decorationColor: Colors.pink),
                       ),
                       Text(
-                        DateFormat.Hm().format(task.dateTime),
+                        DateFormat.Hm().format(task.dateTime ?? DateTime.now()),
                         style: const TextStyle(
                             fontSize: 12,
                             decoration: TextDecoration.lineThrough,
@@ -153,9 +150,7 @@ class _DoneTaskScreenState extends State<DoneTaskScreen> {
       children: [
         GestureDetector(
           onTap: () {
-            setState(() {
-              isSelected = false;
-            });
+            controller.isSelected.value = false;
           },
           child: Container(
               width: Get.width * .14,

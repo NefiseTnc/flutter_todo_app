@@ -1,9 +1,10 @@
-import 'package:date_time_picker/date_time_picker.dart';
+import 'dart:developer';
+
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 import 'package:intl/intl.dart';
-
 import '../constants/app_color.dart';
+import '../controllers/task_controller.dart';
 
 class CreateTaskScreen extends StatefulWidget {
   const CreateTaskScreen({Key? key}) : super(key: key);
@@ -14,16 +15,20 @@ class CreateTaskScreen extends StatefulWidget {
 
 class _CreateTaskScreenState extends State<CreateTaskScreen> {
   final List iconList = [
-    "shopping",
-    "basketball",
-    "location",
-    "party",
-    "sport",
-    "other",
+    "ic_shopping.png",
+    "ic_basketball.png",
+    "ic_location.png",
+    "ic_party.png",
+    "ic_sport.png",
+    "ic_other.png",
   ];
 
   int selectedIconIndex = 0;
+
   DateTime _selectedDate = DateTime.now();
+  final TimeOfDay _selectedTime = TimeOfDay.now();
+
+  TaskController controller = Get.find();
 
   @override
   Widget build(BuildContext context) {
@@ -58,34 +63,16 @@ class _CreateTaskScreenState extends State<CreateTaskScreen> {
                 const SizedBox(
                   height: 15,
                 ),
-                SizedBox(
-                  height: Get.height * .05,
-                  child: ListView.builder(
-                    itemCount: iconList.length,
-                    scrollDirection: Axis.horizontal,
-                    itemBuilder: (BuildContext context, int index) {
-                      return GestureDetector(
-                        onTap: () {
-                          selectedIconIndex = index;
-                          setState(() {});
-                        },
-                        child: Image.asset(
-                          "assets/icons/ic_${iconList[index]}.png",
-                          width: Get.width * .15,
-                          scale: selectedIconIndex == index ? 0.8 : 1,
-                        ),
-                      );
-                    },
-                  ),
-                ),
+                _iconList(),
                 _emptyBox(),
                 const Text(
                   "Name",
                   style: TextStyle(fontSize: 14),
                 ),
-                const TextField(
+                TextField(
+                  controller: controller.nameCntr,
                   cursorColor: Colors.pink,
-                  decoration: InputDecoration(
+                  decoration: const InputDecoration(
                       border:
                           UnderlineInputBorder(borderSide: BorderSide.none)),
                 ),
@@ -111,6 +98,7 @@ class _CreateTaskScreenState extends State<CreateTaskScreen> {
                   height: 10,
                 ),
                 TextField(
+                  controller: controller.descriptionCntr,
                   cursorColor: Colors.pink,
                   maxLines: 5,
                   decoration: InputDecoration(
@@ -123,7 +111,39 @@ class _CreateTaskScreenState extends State<CreateTaskScreen> {
                   ),
                 ),
                 _emptyBox(),
-                DatePicker(),
+                _datePiker(),
+                _emptyBox(),
+                GestureDetector(
+                  onTap: () {
+                    controller
+                        .insertData(
+                            controller.nameCntr.text,
+                            controller.descriptionCntr.text,
+                            _selectedDate,
+                            iconList[selectedIconIndex])
+                        .then((value) => log(iconList[selectedIconIndex]));
+                  },
+                  child: Container(
+                    width: Get.width * .3,
+                    height: Get.width * .094,
+                    decoration: const BoxDecoration(
+                        gradient: LinearGradient(
+                            begin: Alignment.bottomLeft,
+                            end: Alignment.topRight,
+                            colors: [
+                              Color(0xff254DDE),
+                              Color(0xff00FFFF),
+                            ]),
+                        borderRadius: BorderRadius.all(Radius.circular(15))),
+                    child: const Center(
+                      child: Text(
+                        "Add",
+                        style: TextStyle(
+                            color: Colors.white, fontWeight: FontWeight.bold),
+                      ),
+                    ),
+                  ),
+                ),
               ],
             ),
           ),
@@ -132,10 +152,43 @@ class _CreateTaskScreenState extends State<CreateTaskScreen> {
     );
   }
 
+  SizedBox _iconList() {
+    return SizedBox(
+      height: Get.height * .05,
+      child: ListView.builder(
+        itemCount: iconList.length,
+        scrollDirection: Axis.horizontal,
+        itemBuilder: (BuildContext context, int index) {
+          return GestureDetector(
+            onTap: () {
+              selectedIconIndex = index;
+              setState(() {});
+            },
+            child: Image.asset(
+              "assets/icons/${iconList[index]}",
+              width: Get.width * .15,
+              scale: selectedIconIndex == index ? 0.8 : 1,
+            ),
+          );
+        },
+      ),
+    );
+  }
+
   Widget appBarText() {
-    return const Text(
-      "NEW TASK",
-      style: TextStyle(color: AppColor.primaryColor, fontSize: 24),
+    return Row(
+      mainAxisAlignment: MainAxisAlignment.spaceBetween,
+      children: [
+        IconButton(
+            onPressed: () {
+              Get.back();
+            },
+            icon: const Icon(Icons.arrow_back_ios)),
+        const Text(
+          "NEW TASK",
+          style: TextStyle(color: AppColor.primaryColor, fontSize: 24),
+        ),
+      ],
     );
   }
 
@@ -144,48 +197,95 @@ class _CreateTaskScreenState extends State<CreateTaskScreen> {
       height: 25,
     );
   }
-}
 
-class DatePicker extends StatefulWidget {
-  @override
-  _DatePickerState createState() => _DatePickerState();
-}
-
-class _DatePickerState extends State<DatePicker> {
-  DateTime _selectedDate = DateTime.now();
-
-  //Method for showing the date picker
   void _pickDateDialog() {
     showDatePicker(
-            context: context,
-            initialDate: DateTime.now(),
-            //which date will display when user open the picker
-            firstDate: DateTime(1950),
-            //what will be the previous supported year in picker
-            lastDate: DateTime
-                .now()) //what will be the up to supported date in picker
-        .then((pickedDate) {
-      //then usually do the future job
+      context: context,
+      initialDate: DateTime.now(),
+      firstDate: DateTime(2000),
+      lastDate: DateTime(3000),
+    ).then((pickedDate) {
       if (pickedDate == null) {
-        //if user tap cancel then this function will stop
         return;
       }
+
       setState(() {
-        //for rebuilding the ui
         _selectedDate = pickedDate;
       });
     });
   }
 
-  @override
-  Widget build(BuildContext context) {
+  void _pickTimeDialog() {
+    showTimePicker(
+      context: context,
+      initialTime: TimeOfDay.now(),
+    ).then((pickedTime) {
+      if (pickedTime == null) {
+        return;
+      }
+
+      DateTime newDateTime = DateTime(
+        _selectedDate.year,
+        _selectedDate.month,
+        _selectedDate.day,
+        _selectedTime.hour,
+        _selectedTime.minute,
+      );
+
+      setState(() {
+        _selectedDate = newDateTime;
+      });
+      log(_selectedDate.toString());
+    });
+  }
+
+  Widget _datePiker() {
     return Column(
-      children: <Widget>[
-        RaisedButton(child: Text('Add Date'), onPressed: _pickDateDialog),
-        SizedBox(height: 20),
-        Text(_selectedDate == null //ternary expression to check if date is null
-            ? 'No date was chosen!'
-            : 'Picked Date: ${DateFormat.yMMMd().format(_selectedDate)}'),
+      children: [
+        Row(
+          mainAxisAlignment: MainAxisAlignment.start,
+          crossAxisAlignment: CrossAxisAlignment.center,
+          children: [
+            TextButton(
+              onPressed: _pickDateDialog,
+              child: const Text(
+                'Date',
+                style: TextStyle(
+                  color: Colors.pink,
+                ),
+              ),
+            ),
+            const SizedBox(width: 10),
+            Text(
+              _selectedDate.toString().isEmpty
+                  ? 'No date was chosen!'
+                  : DateFormat.yMMMd().format(_selectedDate),
+              style: const TextStyle(fontWeight: FontWeight.bold),
+            ),
+          ],
+        ),
+        Row(
+          mainAxisAlignment: MainAxisAlignment.start,
+          crossAxisAlignment: CrossAxisAlignment.center,
+          children: [
+            TextButton(
+              onPressed: _pickTimeDialog,
+              child: const Text(
+                'Time',
+                style: TextStyle(
+                  color: Colors.pink,
+                ),
+              ),
+            ),
+            const SizedBox(width: 10),
+            Text(
+              _selectedTime.toString().isEmpty
+                  ? 'No date was chosen!'
+                  : _selectedTime.format(context),
+              style: const TextStyle(fontWeight: FontWeight.bold),
+            ),
+          ],
+        ),
       ],
     );
   }

@@ -1,3 +1,4 @@
+import 'dart:developer';
 import 'package:calendar_appbar/calendar_appbar.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_todo_app/data/task_data.dart';
@@ -5,54 +6,51 @@ import 'package:flutter_todo_app/views/done_task_screen.dart';
 import 'package:flutter_todo_app/views/home_screen.dart';
 import 'package:get/get.dart';
 import 'package:intl/intl.dart';
-
+import '../controllers/task_controller.dart';
 import 'create_task_screen.dart';
 
-class CalendarModeScreen extends StatefulWidget {
-  const CalendarModeScreen({Key? key}) : super(key: key);
+class CalendarModeScreen extends StatelessWidget {
+  CalendarModeScreen({Key? key}) : super(key: key);
 
-  @override
-  State<CalendarModeScreen> createState() => _CalendarModeScreenState();
-}
-
-class _CalendarModeScreenState extends State<CalendarModeScreen> {
-  bool isSelected = false;
+  final TaskController controller = Get.find();
 
   @override
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: CalendarAppBar(
-        onDateChanged: (value) => print(value),
+        onDateChanged: (DateTime value) => log(value.toString()),
         firstDate: DateTime.now().subtract(const Duration(days: 140)),
-        lastDate: DateTime.now(),
-        locale: "tr",
-        backButton: false,
+        lastDate: DateTime.now().add(const Duration(days: 140)),
+        backButton: true,
         accent: const Color(0xff12A8EF),
       ),
-      body: Container(
-        width: Get.width,
-        height: Get.height,
-        decoration: BoxDecoration(
-          gradient: LinearGradient(
-            begin: Alignment.topRight,
-            end: Alignment.bottomLeft,
-            colors: [
-              const Color(0xffFEA64C).withOpacity(.2),
-              const Color(0xff254DDE).withOpacity(.2),
-              Colors.white,
-            ],
-          ),
-        ),
-        child: SafeArea(
-          child: Padding(
-            padding: const EdgeInsets.symmetric(horizontal: 20.0, vertical: 5),
-            child: Column(
-              children: [
-                Expanded(
-                    child: Stack(
-                  children: [taskListview(), bottomButtons()],
-                )),
+      body: Obx(
+        () => Container(
+          width: Get.width,
+          height: Get.height,
+          decoration: BoxDecoration(
+            gradient: LinearGradient(
+              begin: Alignment.topRight,
+              end: Alignment.bottomLeft,
+              colors: [
+                const Color(0xffFEA64C).withOpacity(.2),
+                const Color(0xff254DDE).withOpacity(.2),
+                Colors.white,
               ],
+            ),
+          ),
+          child: SafeArea(
+            child: Padding(
+              padding:
+                  const EdgeInsets.symmetric(horizontal: 20.0, vertical: 5),
+              child: Column(
+                children: [
+                  Expanded(
+                      child: Stack(
+                    children: [taskListview(), bottomButtons()],
+                  )),
+                ],
+              ),
             ),
           ),
         ),
@@ -69,7 +67,7 @@ class _CalendarModeScreenState extends State<CalendarModeScreen> {
           mainAxisAlignment: MainAxisAlignment.center,
           children: [
             Text(
-              DateFormat.Hm().format(task.dateTime),
+              DateFormat.Hm().format(task.dateTime ?? DateTime.now()),
               style: const TextStyle(fontSize: 12, fontWeight: FontWeight.bold),
             ),
             const SizedBox(
@@ -84,19 +82,17 @@ class _CalendarModeScreenState extends State<CalendarModeScreen> {
                     borderRadius: BorderRadius.all(Radius.circular(10))),
                 child: ListTile(
                   onLongPress: () {
-                    setState(() {
-                      isSelected = !isSelected;
-                    });
+                    controller.isSelected.value = !controller.isSelected.value;
                   },
                   leading: Image.asset(
                     "assets/icons/${task.iconUrl}",
                   ),
                   title: Text(
-                    task.name,
+                    task.name ?? "",
                     overflow: TextOverflow.ellipsis,
                     maxLines: 2,
                   ),
-                  trailing: isSelected
+                  trailing: controller.isSelected.value
                       ? Container(
                           width: Get.width * .06,
                           height: Get.width * .06,
@@ -114,7 +110,7 @@ class _CalendarModeScreenState extends State<CalendarModeScreen> {
                                   blurRadius: 4)
                             ],
                           ),
-                          child: task.isDone
+                          child: task.isDone == 1
                               ? Image.asset("assets/icons/ic_selected.png")
                               : const SizedBox(),
                         )
@@ -138,7 +134,9 @@ class _CalendarModeScreenState extends State<CalendarModeScreen> {
         child: Column(
           children: [
             Expanded(
-              child: isSelected ? selectedButtons() : unSelectedBottons(),
+              child: controller.isSelected.value
+                  ? selectedButtons()
+                  : unSelectedBottons(),
             ),
             _emptyBox(),
           ],
@@ -154,7 +152,7 @@ class _CalendarModeScreenState extends State<CalendarModeScreen> {
       children: [
         GestureDetector(
           onTap: () {
-            Get.to(() => const DoneTaskScreen());
+            Get.to(() =>  DoneTaskScreen());
           },
           child: Container(
               width: Get.width * .12,
@@ -180,7 +178,7 @@ class _CalendarModeScreenState extends State<CalendarModeScreen> {
         ),
         GestureDetector(
           onTap: () {
-            Get.to(() => const HomeScreen());
+            Get.to(() => HomeScreen());
           },
           child: Container(
             width: Get.width * .15,
@@ -201,7 +199,7 @@ class _CalendarModeScreenState extends State<CalendarModeScreen> {
         ),
         GestureDetector(
           onTap: () {
-            Get.to(const CreateTaskScreen());
+            Get.to( const CreateTaskScreen());
           },
           child: Container(
             width: Get.width * .12,
@@ -236,9 +234,7 @@ class _CalendarModeScreenState extends State<CalendarModeScreen> {
       children: [
         GestureDetector(
           onTap: () {
-            setState(() {
-              isSelected = false;
-            });
+            controller.isSelected.value = false;
           },
           child: Container(
               width: Get.width * .14,

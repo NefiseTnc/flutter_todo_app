@@ -1,49 +1,48 @@
+import 'dart:developer';
 import 'package:flutter/material.dart';
 import 'package:flutter_todo_app/constants/app_color.dart';
-import 'package:flutter_todo_app/controllers/task_controller.dart';
+import 'package:flutter_todo_app/provider/task_provider.dart';
 import 'package:flutter_todo_app/views/calender_mode_screen.dart';
 import 'package:flutter_todo_app/views/create_task_screen.dart';
-import 'package:get/get.dart';
+import 'package:flutter_todo_app/views/done_task_screen.dart';
 import 'package:intl/intl.dart';
-import 'done_task_screen.dart';
+import 'package:provider/provider.dart';
 
 class HomeScreen extends StatelessWidget {
-  HomeScreen({Key? key}) : super(key: key);
+  const HomeScreen({Key? key}) : super(key: key);
 
-  final TaskController controller = Get.put(TaskController());
-
-  @override
+    @override
   Widget build(BuildContext context) {
+    log("calıştı");
+    var size = MediaQuery.of(context).size;
     return Scaffold(
-      body: Obx(
-        () => Container(
-          width: Get.width,
-          height: Get.height,
-          decoration: BoxDecoration(
-            gradient: LinearGradient(
-              begin: Alignment.topRight,
-              end: Alignment.bottomLeft,
-              colors: [
-                const Color(0xffFEA64C).withOpacity(.2),
-                const Color(0xff254DDE).withOpacity(.2),
-                Colors.white,
-              ],
-            ),
+      body: Container(
+        width: size.width,
+        height: size.height,
+        decoration: BoxDecoration(
+          gradient: LinearGradient(
+            begin: Alignment.topRight,
+            end: Alignment.bottomLeft,
+            colors: [
+              const Color(0xffFEA64C).withOpacity(.2),
+              const Color(0xff254DDE).withOpacity(.2),
+              Colors.white,
+            ],
           ),
-          child: SafeArea(
-            child: Padding(
-              padding: const EdgeInsets.symmetric(horizontal: 20.0),
-              child: Column(
-                children: [
-                  _emptyBox(),
-                  appBarText(),
-                  _emptyBox(),
-                  Expanded(
-                      child: Stack(
-                    children: [taskListsview(), bottomButtons()],
-                  )),
-                ],
-              ),
+        ),
+        child: SafeArea(
+          child: Padding(
+            padding: const EdgeInsets.symmetric(horizontal: 20.0),
+            child: Column(
+              children: [
+                _emptyBox(),
+                appBarText(),
+                _emptyBox(),
+                Expanded(
+                    child: Stack(
+                  children: [taskListsview(size,context), bottomButtons(size,context)],
+                )),
+              ],
             ),
           ),
         ),
@@ -58,86 +57,22 @@ class HomeScreen extends StatelessWidget {
     );
   }
 
-  Widget taskListsview() {
+  Widget taskListsview(Size size,BuildContext context) {
     return ListView.builder(
-      itemCount: controller.taskList.length,
+      itemCount: Provider.of<TaskProvider>(context).taskList.length,
       itemBuilder: (context, index) {
-        var task = controller.taskList[index];
+        var task = Provider.of<TaskProvider>(context).taskList[index];
         return Container(
           margin: const EdgeInsets.only(bottom: 15),
-          height: Get.height * .08,
+          height: size.height * .08,
           decoration: const BoxDecoration(
               color: Colors.white54,
               borderRadius: BorderRadius.all(Radius.circular(10))),
           child: ListTile(
-            onTap: () {
-              Get.defaultDialog(
-                  title: "",
-                  content: SizedBox(
-                    width: Get.width * .9,
-                    height: Get.height * .4,
-                    //color: Colors.amber,
-                    child: Padding(
-                      padding: const EdgeInsets.symmetric(horizontal: 16.0),
-                      child: Column(
-                        crossAxisAlignment: CrossAxisAlignment.center,
-                        mainAxisAlignment: MainAxisAlignment.start,
-                        children: [
-                          Image.asset(
-                            "assets/icons/${task.iconUrl}",
-                          ),
-                          _emptyBox(),
-                          Text(
-                            task.name ?? "",
-                            style: const TextStyle(fontWeight: FontWeight.bold),
-                          ),
-                          const SizedBox(
-                            height: 10,
-                          ),
-                          Text(
-                              "${DateFormat.MMMMd().format(task.dateTime ?? DateTime.now())}  ${DateFormat.Hm().format(task.dateTime ?? DateTime.now())}"),
-                          _emptyBox(),
-                          const Text("Description",
-                              style: TextStyle(fontWeight: FontWeight.bold)),
-                          const SizedBox(
-                            height: 10,
-                          ),
-                          Expanded(child: Text(task.description ?? "")),
-                          const Spacer(),
-                          GestureDetector(
-                            onTap: () {
-                              Get.back();
-                            },
-                            child: Container(
-                              width: Get.width * .3,
-                              height: Get.width * .094,
-                              decoration: const BoxDecoration(
-                                  gradient: LinearGradient(
-                                      begin: Alignment.bottomLeft,
-                                      end: Alignment.topRight,
-                                      colors: [
-                                        Color(0xff254DDE),
-                                        Color(0xff00FFFF),
-                                      ]),
-                                  borderRadius:
-                                      BorderRadius.all(Radius.circular(15))),
-                              child: const Center(
-                                child: Text(
-                                  "Done",
-                                  style: TextStyle(
-                                      color: Colors.white,
-                                      fontWeight: FontWeight.bold),
-                                ),
-                              ),
-                            ),
-                          ),
-                        ],
-                      ),
-                    ),
-                  ));
-            },
+            onTap: () {},
             onLongPress: () {
-              controller.isSelected.value = true;
+              Provider.of<TaskProvider>(context, listen: false)
+                  .isSelectedCheck();
             },
             leading: Image.asset(
               "assets/icons/${task.iconUrl}",
@@ -146,27 +81,38 @@ class HomeScreen extends StatelessWidget {
               task.name ?? "",
               overflow: TextOverflow.ellipsis,
               maxLines: 2,
+              style: task.isDone == 1
+                  ? const TextStyle(
+                      decoration: TextDecoration.lineThrough,
+                      decorationColor: Colors.pink)
+                  : null,
             ),
-            trailing: controller.isSelected.value
-                ? Container(
-                    width: Get.width * .06,
-                    height: Get.width * .06,
-                    decoration: BoxDecoration(
-                      borderRadius: BorderRadius.circular(6),
-                      color: Colors.white,
-                      border: Border.all(
-                        color: const Color(0xff181743),
+            trailing: Provider.of<TaskProvider>(context).isSelected
+                ? GestureDetector(
+                    onTap: () {
+                      Provider.of<TaskProvider>(context, listen: false)
+                          .updateData(task);
+                    },
+                    child: Container(
+                      width: size.width * .06,
+                      height: size.width * .06,
+                      decoration: BoxDecoration(
+                        borderRadius: BorderRadius.circular(6),
+                        color: Colors.white,
+                        border: Border.all(
+                          color: const Color(0xff181743),
+                        ),
+                        boxShadow: [
+                          BoxShadow(
+                              color: const Color(0xffFE1E9A).withOpacity(.2),
+                              offset: const Offset(0, 2),
+                              blurRadius: 4)
+                        ],
                       ),
-                      boxShadow: [
-                        BoxShadow(
-                            color: const Color(0xffFE1E9A).withOpacity(.2),
-                            offset: const Offset(0, 2),
-                            blurRadius: 4)
-                      ],
+                      child: task.isDone == 1
+                          ? Image.asset("assets/icons/ic_selected.png")
+                          : const SizedBox(),
                     ),
-                    child: task.isDone == 1
-                        ? Image.asset("assets/icons/ic_selected.png")
-                        : const SizedBox(),
                   )
                 : Column(
                     mainAxisAlignment: MainAxisAlignment.center,
@@ -188,19 +134,19 @@ class HomeScreen extends StatelessWidget {
     );
   }
 
-  Widget bottomButtons() {
+  Widget bottomButtons(Size size,BuildContext context) {
     return Align(
       alignment: Alignment.bottomCenter,
       child: Container(
-        height: Get.height * .19,
+        height: size.height * .19,
         decoration: const BoxDecoration(
             borderRadius: BorderRadius.all(Radius.circular(10))),
         child: Column(
           children: [
             Expanded(
-              child: controller.isSelected.value
-                  ? selectedButtons()
-                  : unSelectedBottons(),
+              child: Provider.of<TaskProvider>(context).isSelected
+                  ? selectedButtons(size,context)
+                  : unSelectedBottons(size,context),
             ),
             _emptyBox(),
           ],
@@ -209,18 +155,20 @@ class HomeScreen extends StatelessWidget {
     );
   }
 
-  Widget unSelectedBottons() {
+  Widget unSelectedBottons(Size size,BuildContext context) {
     return Row(
       mainAxisAlignment: MainAxisAlignment.spaceEvenly,
       crossAxisAlignment: CrossAxisAlignment.end,
       children: [
         GestureDetector(
           onTap: () {
-            Get.to(() =>  DoneTaskScreen());
+            Navigator.of(context).push(MaterialPageRoute(
+              builder: (context) => DoneTaskScreen(),
+            ));
           },
           child: Container(
-              width: Get.width * .12,
-              height: Get.width * .12,
+              width: size.width * .12,
+              height: size.width * .12,
               decoration: const BoxDecoration(
                 shape: BoxShape.circle,
                 gradient: LinearGradient(
@@ -242,11 +190,13 @@ class HomeScreen extends StatelessWidget {
         ),
         GestureDetector(
           onTap: () {
-            Get.to(() =>  CalendarModeScreen());
+            Navigator.of(context).push(MaterialPageRoute(
+              builder: (context) => CalendarModeScreen(),
+            ));
           },
           child: Container(
-            width: Get.width * .15,
-            height: Get.width * .15,
+            width: size.width * .15,
+            height: size.width * .15,
             margin: const EdgeInsets.only(bottom: 10),
             decoration: BoxDecoration(
               shape: BoxShape.circle,
@@ -263,11 +213,13 @@ class HomeScreen extends StatelessWidget {
         ),
         GestureDetector(
           onTap: () {
-            Get.to( const CreateTaskScreen());
+            Navigator.of(context).push(MaterialPageRoute(
+              builder: (context) => const CreateTaskScreen(),
+            ));
           },
           child: Container(
-            width: Get.width * .12,
-            height: Get.width * .12,
+            width: size.width * .12,
+            height: size.width * .12,
             decoration: const BoxDecoration(
               shape: BoxShape.circle,
               gradient: LinearGradient(
@@ -291,18 +243,18 @@ class HomeScreen extends StatelessWidget {
     );
   }
 
-  Widget selectedButtons() {
+  Widget selectedButtons(Size size,BuildContext context) {
     return Row(
       mainAxisAlignment: MainAxisAlignment.center,
       crossAxisAlignment: CrossAxisAlignment.end,
       children: [
         GestureDetector(
           onTap: () {
-            controller.isSelected.value = false;
+            Provider.of<TaskProvider>(context, listen: false).isSelectedCheck();
           },
           child: Container(
-              width: Get.width * .14,
-              height: Get.width * .14,
+              width: size.width * .14,
+              height: size.width * .14,
               decoration: const BoxDecoration(
                 shape: BoxShape.circle,
                 gradient: LinearGradient(
@@ -316,24 +268,6 @@ class HomeScreen extends StatelessWidget {
               ),
               child: Image.asset("assets/icons/ic_close.png")),
         ),
-        const SizedBox(
-          width: 15,
-        ),
-        Container(
-            width: Get.width * .14,
-            height: Get.width * .14,
-            decoration: const BoxDecoration(
-              shape: BoxShape.circle,
-              gradient: LinearGradient(
-                  begin: Alignment.bottomLeft,
-                  end: Alignment.topRight,
-                  colors: [
-                    Color(0xff254DDE),
-                    Color(0xffFE1E9A),
-                  ]),
-              color: Colors.purple,
-            ),
-            child: Image.asset("assets/icons/ic_double_check.png")),
       ],
     );
   }

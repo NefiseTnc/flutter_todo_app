@@ -1,50 +1,50 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_todo_app/constants/app_color.dart';
-import 'package:get/get.dart';
+import 'package:flutter_todo_app/provider/task_provider.dart';
 import 'package:intl/intl.dart';
-import '../controllers/task_controller.dart';
+import 'package:provider/provider.dart';
 
-class DoneTaskScreen extends StatelessWidget {
-  DoneTaskScreen({Key? key}) : super(key: key);
-
-  final TaskController controller = Get.find();
+class DoneTaskScreen extends StatefulWidget {
+  const DoneTaskScreen({Key? key}) : super(key: key);
 
   @override
+  State<DoneTaskScreen> createState() => _DoneTaskScreenState();
+}
+
+class _DoneTaskScreenState extends State<DoneTaskScreen> {
+  @override
   Widget build(BuildContext context) {
-    controller.getDoneTaskDatas();
+    var size = MediaQuery.of(context).size;
+    var provider = Provider.of<TaskProvider>(context);
     return Scaffold(
-      body: Obx(
-        () => Container(
-          width: Get.width,
-          height: Get.height,
-          decoration: BoxDecoration(
-            gradient: LinearGradient(
-              begin: Alignment.topRight,
-              end: Alignment.bottomLeft,
-              colors: [
-                const Color(0xffFEA64C).withOpacity(.2),
-                const Color(0xff254DDE).withOpacity(.2),
-                Colors.white,
-              ],
-            ),
+      body: Container(
+        width: size.width,
+        height: size.height,
+        decoration: BoxDecoration(
+          gradient: LinearGradient(
+            begin: Alignment.topRight,
+            end: Alignment.bottomLeft,
+            colors: [
+              const Color(0xffFEA64C).withOpacity(.2),
+              const Color(0xff254DDE).withOpacity(.2),
+              Colors.white,
+            ],
           ),
-          child: SafeArea(
-            child: Padding(
-              padding: const EdgeInsets.symmetric(horizontal: 20.0),
-              child: Column(
-                children: [
-                  _emptyBox(),
-                  appBarText(),
-                  _emptyBox(),
-                  Expanded(
-                    child: taskListview(),
-                  ),
-                  controller.isSelected.value
-                      ? selectedButtons()
-                      : const SizedBox(),
-                  _emptyBox(),
-                ],
-              ),
+        ),
+        child: SafeArea(
+          child: Padding(
+            padding: const EdgeInsets.symmetric(horizontal: 20.0),
+            child: Column(
+              children: [
+                _emptyBox(),
+                appBarText(size),
+                _emptyBox(),
+                Expanded(
+                  child: taskListview(size),
+                ),
+                provider.isSelected ? selectedButtons(size) : const SizedBox(),
+                _emptyBox(),
+              ],
             ),
           ),
         ),
@@ -52,13 +52,13 @@ class DoneTaskScreen extends StatelessWidget {
     );
   }
 
-  Widget appBarText() {
+  Widget appBarText(Size size) {
     return Row(
       mainAxisAlignment: MainAxisAlignment.spaceBetween,
       children: [
         IconButton(
           onPressed: () {
-            Get.back();
+            Navigator.pop(context);
           },
           icon: const Icon(Icons.arrow_back_ios),
         ),
@@ -70,20 +70,21 @@ class DoneTaskScreen extends StatelessWidget {
     );
   }
 
-  Widget taskListview() {
+  Widget taskListview(Size size) {
     return ListView.builder(
-      itemCount: controller.doneTaskList.length,
+      itemCount: Provider.of<TaskProvider>(context).doneTaskList.length,
       itemBuilder: (context, index) {
-        var task = controller.doneTaskList[index];
+        var task = Provider.of<TaskProvider>(context).doneTaskList[index];
         return Container(
           margin: const EdgeInsets.only(bottom: 15),
-          height: Get.height * .08,
+          height: size.height * .08,
           decoration: const BoxDecoration(
               color: Colors.white54,
               borderRadius: BorderRadius.all(Radius.circular(10))),
           child: ListTile(
             onLongPress: () {
-              controller.isSelected.value = !controller.isSelected.value;
+              Provider.of<TaskProvider>(context, listen: false)
+                  .isSelectedCheck();
             },
             leading: Image.asset(
               "assets/icons/${task.iconUrl}",
@@ -96,26 +97,32 @@ class DoneTaskScreen extends StatelessWidget {
                   decoration: TextDecoration.lineThrough,
                   decorationColor: Colors.pink),
             ),
-            trailing: controller.isSelected.value
-                ? Container(
-                    width: Get.width * .06,
-                    height: Get.width * .06,
-                    decoration: BoxDecoration(
-                      borderRadius: BorderRadius.circular(6),
-                      color: Colors.white,
-                      border: Border.all(
-                        color: const Color(0xff181743),
+            trailing: Provider.of<TaskProvider>(context).isSelected
+                ? GestureDetector(
+                    onTap: () {
+                      Provider.of<TaskProvider>(context, listen: false)
+                          .updateData(task);
+                    },
+                    child: Container(
+                      width: size.width * .06,
+                      height: size.width * .06,
+                      decoration: BoxDecoration(
+                        borderRadius: BorderRadius.circular(6),
+                        color: Colors.white,
+                        border: Border.all(
+                          color: const Color(0xff181743),
+                        ),
+                        boxShadow: [
+                          BoxShadow(
+                              color: const Color(0xffFE1E9A).withOpacity(.2),
+                              offset: const Offset(0, 2),
+                              blurRadius: 4)
+                        ],
                       ),
-                      boxShadow: [
-                        BoxShadow(
-                            color: const Color(0xffFE1E9A).withOpacity(.2),
-                            offset: const Offset(0, 2),
-                            blurRadius: 4)
-                      ],
+                      child: task.isDone == 1
+                          ? Image.asset("assets/icons/ic_selected.png")
+                          : const SizedBox(),
                     ),
-                    child: task.isDone == 1
-                        ? Image.asset("assets/icons/ic_selected.png")
-                        : const SizedBox(),
                   )
                 : Column(
                     mainAxisAlignment: MainAxisAlignment.center,
@@ -143,18 +150,18 @@ class DoneTaskScreen extends StatelessWidget {
     );
   }
 
-  Widget selectedButtons() {
+  Widget selectedButtons(Size size) {
     return Row(
       mainAxisAlignment: MainAxisAlignment.center,
       crossAxisAlignment: CrossAxisAlignment.end,
       children: [
         GestureDetector(
           onTap: () {
-            controller.isSelected.value = false;
+            Provider.of<TaskProvider>(context, listen: false).isSelectedCheck();
           },
           child: Container(
-              width: Get.width * .14,
-              height: Get.width * .14,
+              width: size.width * .14,
+              height: size.width * .14,
               decoration: const BoxDecoration(
                 shape: BoxShape.circle,
                 gradient: LinearGradient(
@@ -168,24 +175,6 @@ class DoneTaskScreen extends StatelessWidget {
               ),
               child: Image.asset("assets/icons/ic_close.png")),
         ),
-        const SizedBox(
-          width: 15,
-        ),
-        Container(
-            width: Get.width * .14,
-            height: Get.width * .14,
-            decoration: const BoxDecoration(
-              shape: BoxShape.circle,
-              gradient: LinearGradient(
-                  begin: Alignment.bottomLeft,
-                  end: Alignment.topRight,
-                  colors: [
-                    Color(0xff254DDE),
-                    Color(0xffFE1E9A),
-                  ]),
-              color: Colors.purple,
-            ),
-            child: Image.asset("assets/icons/ic_double_check.png")),
       ],
     );
   }

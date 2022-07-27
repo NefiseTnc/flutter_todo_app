@@ -1,10 +1,11 @@
 import 'dart:developer';
-
 import 'package:flutter/material.dart';
-import 'package:get/get.dart';
+import 'package:flutter_todo_app/provider/task_provider.dart';
+import 'package:flutter_todo_app/views/home_screen.dart';
 import 'package:intl/intl.dart';
+import 'package:provider/provider.dart';
 import '../constants/app_color.dart';
-import '../controllers/task_controller.dart';
+import '../models/task_model.dart';
 
 class CreateTaskScreen extends StatefulWidget {
   const CreateTaskScreen({Key? key}) : super(key: key);
@@ -28,14 +29,16 @@ class _CreateTaskScreenState extends State<CreateTaskScreen> {
   DateTime _selectedDate = DateTime.now();
   final TimeOfDay _selectedTime = TimeOfDay.now();
 
-  TaskController controller = Get.find();
+  TextEditingController nameCntr = TextEditingController();
+  TextEditingController descriptionCntr = TextEditingController();
 
   @override
   Widget build(BuildContext context) {
+    var size = MediaQuery.of(context).size;
     return Scaffold(
       body: Container(
-        width: Get.width,
-        height: Get.height,
+        width: size.width,
+        height: size.height,
         decoration: BoxDecoration(
           gradient: LinearGradient(
             begin: Alignment.topRight,
@@ -63,22 +66,22 @@ class _CreateTaskScreenState extends State<CreateTaskScreen> {
                 const SizedBox(
                   height: 15,
                 ),
-                _iconList(),
+                _iconList(size),
                 _emptyBox(),
                 const Text(
                   "Name",
                   style: TextStyle(fontSize: 14),
                 ),
                 TextField(
-                  controller: controller.nameCntr,
+                  controller: nameCntr,
                   cursorColor: Colors.pink,
                   decoration: const InputDecoration(
                       border:
                           UnderlineInputBorder(borderSide: BorderSide.none)),
                 ),
                 Container(
-                  width: Get.width,
-                  height: Get.height * .001,
+                  width: size.width,
+                  height: size.height * .001,
                   decoration: const BoxDecoration(
                     gradient: LinearGradient(
                         begin: Alignment.bottomLeft,
@@ -98,7 +101,7 @@ class _CreateTaskScreenState extends State<CreateTaskScreen> {
                   height: 10,
                 ),
                 TextField(
-                  controller: controller.descriptionCntr,
+                  controller: descriptionCntr,
                   cursorColor: Colors.pink,
                   maxLines: 5,
                   decoration: InputDecoration(
@@ -115,17 +118,19 @@ class _CreateTaskScreenState extends State<CreateTaskScreen> {
                 _emptyBox(),
                 GestureDetector(
                   onTap: () {
-                    controller
-                        .insertData(
-                            controller.nameCntr.text,
-                            controller.descriptionCntr.text,
-                            _selectedDate,
-                            iconList[selectedIconIndex])
-                        .then((value) => log(iconList[selectedIconIndex]));
+                    TaskModel task = TaskModel(
+                        name: nameCntr.text,
+                        description: descriptionCntr.text,
+                        dateTime: _selectedDate,
+                        iconUrl: iconList[selectedIconIndex]);
+                    Provider.of<TaskProvider>(context, listen: false)
+                        .insertData(task).then((value) {
+                          Navigator.pop(context, MaterialPageRoute(builder: (context) => const HomeScreen()));
+                        });
                   },
                   child: Container(
-                    width: Get.width * .3,
-                    height: Get.width * .094,
+                    width: size.width * .3,
+                    height: size.width * .094,
                     decoration: const BoxDecoration(
                         gradient: LinearGradient(
                             begin: Alignment.bottomLeft,
@@ -152,9 +157,9 @@ class _CreateTaskScreenState extends State<CreateTaskScreen> {
     );
   }
 
-  SizedBox _iconList() {
+  SizedBox _iconList(Size size) {
     return SizedBox(
-      height: Get.height * .05,
+      height: size.height * .05,
       child: ListView.builder(
         itemCount: iconList.length,
         scrollDirection: Axis.horizontal,
@@ -166,7 +171,7 @@ class _CreateTaskScreenState extends State<CreateTaskScreen> {
             },
             child: Image.asset(
               "assets/icons/${iconList[index]}",
-              width: Get.width * .15,
+              width: size.width * .15,
               scale: selectedIconIndex == index ? 0.8 : 1,
             ),
           );
@@ -179,11 +184,7 @@ class _CreateTaskScreenState extends State<CreateTaskScreen> {
     return Row(
       mainAxisAlignment: MainAxisAlignment.spaceBetween,
       children: [
-        IconButton(
-            onPressed: () {
-              Get.back();
-            },
-            icon: const Icon(Icons.arrow_back_ios)),
+        IconButton(onPressed: () {}, icon: const Icon(Icons.arrow_back_ios)),
         const Text(
           "NEW TASK",
           style: TextStyle(color: AppColor.primaryColor, fontSize: 24),

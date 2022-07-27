@@ -1,10 +1,12 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_todo_app/provider/task_provider.dart';
 import 'package:flutter_todo_app/views/home_screen.dart';
-import 'package:get/get.dart';
+import 'package:provider/provider.dart';
 
 Future<void> main() async {
   WidgetsFlutterBinding.ensureInitialized();
-  runApp(const MyApp());
+  runApp(ChangeNotifierProvider<TaskProvider>(
+      create: (context) => TaskProvider(), child: const MyApp()));
 }
 
 class MyApp extends StatelessWidget {
@@ -12,11 +14,10 @@ class MyApp extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return GetMaterialApp(
+    return MaterialApp(
       debugShowCheckedModeBanner: false,
-      locale: Get.deviceLocale,
       theme: ThemeData(),
-      home:  HomeScreen(),
+      home: const HomeScreen(),
     );
   }
 }

@@ -1,21 +1,17 @@
 import 'dart:developer';
 import 'package:calendar_appbar/calendar_appbar.dart';
 import 'package:flutter/material.dart';
-import 'package:flutter_todo_app/data/task_data.dart';
-import 'package:flutter_todo_app/views/done_task_screen.dart';
-import 'package:flutter_todo_app/views/home_screen.dart';
-import 'package:get/get.dart';
+import 'package:flutter_todo_app/models/task_model.dart';
 import 'package:intl/intl.dart';
-import '../controllers/task_controller.dart';
-import 'create_task_screen.dart';
 
 class CalendarModeScreen extends StatelessWidget {
   CalendarModeScreen({Key? key}) : super(key: key);
 
-  final TaskController controller = Get.find();
+  List<TaskModel> taskList = [];
 
   @override
   Widget build(BuildContext context) {
+    var size = MediaQuery.of(context).size;
     return Scaffold(
       appBar: CalendarAppBar(
         onDateChanged: (DateTime value) => log(value.toString()),
@@ -24,33 +20,30 @@ class CalendarModeScreen extends StatelessWidget {
         backButton: true,
         accent: const Color(0xff12A8EF),
       ),
-      body: Obx(
-        () => Container(
-          width: Get.width,
-          height: Get.height,
-          decoration: BoxDecoration(
-            gradient: LinearGradient(
-              begin: Alignment.topRight,
-              end: Alignment.bottomLeft,
-              colors: [
-                const Color(0xffFEA64C).withOpacity(.2),
-                const Color(0xff254DDE).withOpacity(.2),
-                Colors.white,
-              ],
-            ),
+      body: Container(
+        width: size.width,
+        height: size.height,
+        decoration: BoxDecoration(
+          gradient: LinearGradient(
+            begin: Alignment.topRight,
+            end: Alignment.bottomLeft,
+            colors: [
+              const Color(0xffFEA64C).withOpacity(.2),
+              const Color(0xff254DDE).withOpacity(.2),
+              Colors.white,
+            ],
           ),
-          child: SafeArea(
-            child: Padding(
-              padding:
-                  const EdgeInsets.symmetric(horizontal: 20.0, vertical: 5),
-              child: Column(
-                children: [
-                  Expanded(
-                      child: Stack(
-                    children: [taskListview(), bottomButtons()],
-                  )),
-                ],
-              ),
+        ),
+        child: SafeArea(
+          child: Padding(
+            padding: const EdgeInsets.symmetric(horizontal: 20.0, vertical: 5),
+            child: Column(
+              children: [
+                Expanded(
+                    child: Stack(
+                  children: [taskListview(size), bottomButtons(size)],
+                )),
+              ],
             ),
           ),
         ),
@@ -58,7 +51,7 @@ class CalendarModeScreen extends StatelessWidget {
     );
   }
 
-  Widget taskListview() {
+  Widget taskListview(Size size) {
     return ListView.builder(
       itemCount: taskList.length,
       itemBuilder: (context, index) {
@@ -76,13 +69,13 @@ class CalendarModeScreen extends StatelessWidget {
             Expanded(
               child: Container(
                 margin: const EdgeInsets.only(bottom: 15),
-                height: Get.height * .08,
+                height: size.height * .08,
                 decoration: const BoxDecoration(
                     color: Colors.white54,
                     borderRadius: BorderRadius.all(Radius.circular(10))),
                 child: ListTile(
                   onLongPress: () {
-                    controller.isSelected.value = !controller.isSelected.value;
+                    // controller.isSelected.value = !controller.isSelected.value;
                   },
                   leading: Image.asset(
                     "assets/icons/${task.iconUrl}",
@@ -92,29 +85,30 @@ class CalendarModeScreen extends StatelessWidget {
                     overflow: TextOverflow.ellipsis,
                     maxLines: 2,
                   ),
-                  trailing: controller.isSelected.value
-                      ? Container(
-                          width: Get.width * .06,
-                          height: Get.width * .06,
-                          decoration: BoxDecoration(
-                            borderRadius: BorderRadius.circular(6),
-                            color: Colors.white,
-                            border: Border.all(
-                              color: const Color(0xff181743),
-                            ),
-                            boxShadow: [
-                              BoxShadow(
-                                  color:
-                                      const Color(0xffFE1E9A).withOpacity(.2),
-                                  offset: const Offset(0, 2),
-                                  blurRadius: 4)
-                            ],
-                          ),
-                          child: task.isDone == 1
-                              ? Image.asset("assets/icons/ic_selected.png")
-                              : const SizedBox(),
-                        )
-                      : const SizedBox(),
+                  trailing: //controller.isSelected.value
+                      true
+                          ? Container(
+                              width: size.width * .06,
+                              height: size.width * .06,
+                              decoration: BoxDecoration(
+                                borderRadius: BorderRadius.circular(6),
+                                color: Colors.white,
+                                border: Border.all(
+                                  color: const Color(0xff181743),
+                                ),
+                                boxShadow: [
+                                  BoxShadow(
+                                      color: const Color(0xffFE1E9A)
+                                          .withOpacity(.2),
+                                      offset: const Offset(0, 2),
+                                      blurRadius: 4)
+                                ],
+                              ),
+                              child: task.isDone == 1
+                                  ? Image.asset("assets/icons/ic_selected.png")
+                                  : const SizedBox(),
+                            )
+                          : const SizedBox(),
                 ),
               ),
             ),
@@ -124,19 +118,18 @@ class CalendarModeScreen extends StatelessWidget {
     );
   }
 
-  Widget bottomButtons() {
+  Widget bottomButtons(Size size) {
     return Align(
       alignment: Alignment.bottomCenter,
       child: Container(
-        height: Get.height * .19,
+        height: size.height * .19,
         decoration: const BoxDecoration(
             borderRadius: BorderRadius.all(Radius.circular(10))),
         child: Column(
           children: [
             Expanded(
-              child: controller.isSelected.value
-                  ? selectedButtons()
-                  : unSelectedBottons(),
+              child: //controller.isSelected.value
+                  true ? selectedButtons(size) : unSelectedBottons(size),
             ),
             _emptyBox(),
           ],
@@ -145,18 +138,16 @@ class CalendarModeScreen extends StatelessWidget {
     );
   }
 
-  Widget unSelectedBottons() {
+  Widget unSelectedBottons(Size size) {
     return Row(
       mainAxisAlignment: MainAxisAlignment.spaceEvenly,
       crossAxisAlignment: CrossAxisAlignment.end,
       children: [
         GestureDetector(
-          onTap: () {
-            Get.to(() =>  DoneTaskScreen());
-          },
+          onTap: () {},
           child: Container(
-              width: Get.width * .12,
-              height: Get.width * .12,
+              width: size.width * .12,
+              height: size.width * .12,
               decoration: const BoxDecoration(
                 shape: BoxShape.circle,
                 gradient: LinearGradient(
@@ -177,12 +168,10 @@ class CalendarModeScreen extends StatelessWidget {
               child: Image.asset("assets/icons/ic_check.png")),
         ),
         GestureDetector(
-          onTap: () {
-            Get.to(() => HomeScreen());
-          },
+          onTap: () {},
           child: Container(
-            width: Get.width * .15,
-            height: Get.width * .15,
+            width: size.width * .15,
+            height: size.width * .15,
             margin: const EdgeInsets.only(bottom: 10),
             decoration: BoxDecoration(
               shape: BoxShape.circle,
@@ -198,12 +187,10 @@ class CalendarModeScreen extends StatelessWidget {
           ),
         ),
         GestureDetector(
-          onTap: () {
-            Get.to( const CreateTaskScreen());
-          },
+          onTap: () {},
           child: Container(
-            width: Get.width * .12,
-            height: Get.width * .12,
+            width: size.width * .12,
+            height: size.width * .12,
             decoration: const BoxDecoration(
               shape: BoxShape.circle,
               gradient: LinearGradient(
@@ -227,18 +214,18 @@ class CalendarModeScreen extends StatelessWidget {
     );
   }
 
-  Widget selectedButtons() {
+  Widget selectedButtons(Size size) {
     return Row(
       mainAxisAlignment: MainAxisAlignment.center,
       crossAxisAlignment: CrossAxisAlignment.end,
       children: [
         GestureDetector(
           onTap: () {
-            controller.isSelected.value = false;
+            //controller.isSelected.value = false;
           },
           child: Container(
-              width: Get.width * .14,
-              height: Get.width * .14,
+              width: size.width * .14,
+              height: size.width * .14,
               decoration: const BoxDecoration(
                 shape: BoxShape.circle,
                 gradient: LinearGradient(
@@ -252,24 +239,6 @@ class CalendarModeScreen extends StatelessWidget {
               ),
               child: Image.asset("assets/icons/ic_close.png")),
         ),
-        const SizedBox(
-          width: 15,
-        ),
-        Container(
-            width: Get.width * .14,
-            height: Get.width * .14,
-            decoration: const BoxDecoration(
-              shape: BoxShape.circle,
-              gradient: LinearGradient(
-                  begin: Alignment.bottomLeft,
-                  end: Alignment.topRight,
-                  colors: [
-                    Color(0xff254DDE),
-                    Color(0xffFE1E9A),
-                  ]),
-              color: Colors.purple,
-            ),
-            child: Image.asset("assets/icons/ic_double_check.png")),
       ],
     );
   }

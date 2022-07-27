@@ -9,9 +9,6 @@ class TaskProvider with ChangeNotifier {
 
   LocalDatabase db = LocalDatabase.instance;
 
-  TextEditingController nameCntr = TextEditingController();
-  TextEditingController descriptionCntr = TextEditingController();
-
   TaskProvider() {
     getDatas();
   }
@@ -63,5 +60,16 @@ class TaskProvider with ChangeNotifier {
   Future<void> deleteData(TaskModel task) async {
     notifyListeners();
     await db.delete(task.id!);
+  }
+
+  List<TaskModel> filterDatas(DateTime selectedDateTime) {
+    List<TaskModel> list = [];
+
+    list = taskList
+        .where((element) => element.dateTime!.day == selectedDateTime.day)
+        .toList();
+    notifyListeners();
+
+    return list;
   }
 }

@@ -124,9 +124,13 @@ class _CreateTaskScreenState extends State<CreateTaskScreen> {
                         dateTime: _selectedDate,
                         iconUrl: iconList[selectedIconIndex]);
                     Provider.of<TaskProvider>(context, listen: false)
-                        .insertData(task).then((value) {
-                          Navigator.pop(context, MaterialPageRoute(builder: (context) => const HomeScreen()));
-                        });
+                        .insertData(task)
+                        .then((value) {
+                      Navigator.pop(
+                          context,
+                          MaterialPageRoute(
+                              builder: (context) => const HomeScreen()));
+                    });
                   },
                   child: Container(
                     width: size.width * .3,
@@ -184,7 +188,12 @@ class _CreateTaskScreenState extends State<CreateTaskScreen> {
     return Row(
       mainAxisAlignment: MainAxisAlignment.spaceBetween,
       children: [
-        IconButton(onPressed: () {}, icon: const Icon(Icons.arrow_back_ios)),
+        IconButton(
+            onPressed: () {
+              Navigator.push(context,
+                  MaterialPageRoute(builder: (context) => const HomeScreen()));
+            },
+            icon: const Icon(Icons.arrow_back_ios)),
         const Text(
           "NEW TASK",
           style: TextStyle(color: AppColor.primaryColor, fontSize: 24),

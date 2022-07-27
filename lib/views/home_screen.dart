@@ -1,4 +1,3 @@
-import 'dart:developer';
 import 'package:flutter/material.dart';
 import 'package:flutter_todo_app/constants/app_color.dart';
 import 'package:flutter_todo_app/provider/task_provider.dart';
@@ -13,7 +12,6 @@ class HomeScreen extends StatelessWidget {
 
     @override
   Widget build(BuildContext context) {
-    log("calıştı");
     var size = MediaQuery.of(context).size;
     return Scaffold(
       body: Container(

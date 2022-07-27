@@ -1,12 +1,22 @@
 import 'dart:developer';
+
 import 'package:calendar_appbar/calendar_appbar.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_todo_app/models/task_model.dart';
+import 'package:flutter_todo_app/provider/task_provider.dart';
+import 'package:flutter_todo_app/views/create_task_screen.dart';
+import 'package:flutter_todo_app/views/done_task_screen.dart';
 import 'package:intl/intl.dart';
+import 'package:provider/provider.dart';
 
-class CalendarModeScreen extends StatelessWidget {
-  CalendarModeScreen({Key? key}) : super(key: key);
+class CalendarModeScreen extends StatefulWidget {
+  const CalendarModeScreen({Key? key}) : super(key: key);
 
+  @override
+  State<CalendarModeScreen> createState() => _CalendarModeScreenState();
+}
+
+class _CalendarModeScreenState extends State<CalendarModeScreen> {
   List<TaskModel> taskList = [];
 
   @override
@@ -14,9 +24,12 @@ class CalendarModeScreen extends StatelessWidget {
     var size = MediaQuery.of(context).size;
     return Scaffold(
       appBar: CalendarAppBar(
-        onDateChanged: (DateTime value) => log(value.toString()),
+        onDateChanged: (DateTime value) {
+          taskList = Provider.of<TaskProvider>(context, listen: false)
+              .filterDatas(value);
+        },
         firstDate: DateTime.now().subtract(const Duration(days: 140)),
-        lastDate: DateTime.now().add(const Duration(days: 140)),
+        lastDate: DateTime.now(),
         backButton: true,
         accent: const Color(0xff12A8EF),
       ),
@@ -41,7 +54,14 @@ class CalendarModeScreen extends StatelessWidget {
               children: [
                 Expanded(
                     child: Stack(
-                  children: [taskListview(size), bottomButtons(size)],
+                  children: [
+                    taskList.isNotEmpty
+                        ? taskListview(size)
+                        : const Center(
+                            child: Text("Not found task"),
+                          ),
+                    bottomButtons(size),
+                  ],
                 )),
               ],
             ),
@@ -75,7 +95,8 @@ class CalendarModeScreen extends StatelessWidget {
                     borderRadius: BorderRadius.all(Radius.circular(10))),
                 child: ListTile(
                   onLongPress: () {
-                    // controller.isSelected.value = !controller.isSelected.value;
+                    Provider.of<TaskProvider>(context, listen: false)
+                        .isSelectedCheck();
                   },
                   leading: Image.asset(
                     "assets/icons/${task.iconUrl}",
@@ -85,30 +106,35 @@ class CalendarModeScreen extends StatelessWidget {
                     overflow: TextOverflow.ellipsis,
                     maxLines: 2,
                   ),
-                  trailing: //controller.isSelected.value
-                      true
-                          ? Container(
-                              width: size.width * .06,
-                              height: size.width * .06,
-                              decoration: BoxDecoration(
-                                borderRadius: BorderRadius.circular(6),
-                                color: Colors.white,
-                                border: Border.all(
-                                  color: const Color(0xff181743),
-                                ),
-                                boxShadow: [
-                                  BoxShadow(
-                                      color: const Color(0xffFE1E9A)
-                                          .withOpacity(.2),
-                                      offset: const Offset(0, 2),
-                                      blurRadius: 4)
-                                ],
+                  trailing: Provider.of<TaskProvider>(context).isSelected
+                      ? GestureDetector(
+                          onTap: () {
+                            Provider.of<TaskProvider>(context, listen: false)
+                                .updateData(task);
+                          },
+                          child: Container(
+                            width: size.width * .06,
+                            height: size.width * .06,
+                            decoration: BoxDecoration(
+                              borderRadius: BorderRadius.circular(6),
+                              color: Colors.white,
+                              border: Border.all(
+                                color: const Color(0xff181743),
                               ),
-                              child: task.isDone == 1
-                                  ? Image.asset("assets/icons/ic_selected.png")
-                                  : const SizedBox(),
-                            )
-                          : const SizedBox(),
+                              boxShadow: [
+                                BoxShadow(
+                                    color:
+                                        const Color(0xffFE1E9A).withOpacity(.2),
+                                    offset: const Offset(0, 2),
+                                    blurRadius: 4)
+                              ],
+                            ),
+                            child: task.isDone == 1
+                                ? Image.asset("assets/icons/ic_selected.png")
+                                : const SizedBox(),
+                          ),
+                        )
+                      : const SizedBox(),
                 ),
               ),
             ),
@@ -128,8 +154,9 @@ class CalendarModeScreen extends StatelessWidget {
         child: Column(
           children: [
             Expanded(
-              child: //controller.isSelected.value
-                  true ? selectedButtons(size) : unSelectedBottons(size),
+              child: Provider.of<TaskProvider>(context).isSelected
+                  ? selectedButtons(size)
+                  : unSelectedBottons(size),
             ),
             _emptyBox(),
           ],
@@ -144,7 +171,12 @@ class CalendarModeScreen extends StatelessWidget {
       crossAxisAlignment: CrossAxisAlignment.end,
       children: [
         GestureDetector(
-          onTap: () {},
+          onTap: () {
+            Navigator.push(
+                context,
+                MaterialPageRoute(
+                    builder: (context) => const DoneTaskScreen()));
+          },
           child: Container(
               width: size.width * .12,
               height: size.width * .12,
@@ -168,7 +200,9 @@ class CalendarModeScreen extends StatelessWidget {
               child: Image.asset("assets/icons/ic_check.png")),
         ),
         GestureDetector(
-          onTap: () {},
+          onTap: () {
+            Navigator.pop(context);
+          },
           child: Container(
             width: size.width * .15,
             height: size.width * .15,
@@ -187,7 +221,12 @@ class CalendarModeScreen extends StatelessWidget {
           ),
         ),
         GestureDetector(
-          onTap: () {},
+          onTap: () {
+            Navigator.push(
+                context,
+                MaterialPageRoute(
+                    builder: (context) => const CreateTaskScreen()));
+          },
           child: Container(
             width: size.width * .12,
             height: size.width * .12,
@@ -221,7 +260,7 @@ class CalendarModeScreen extends StatelessWidget {
       children: [
         GestureDetector(
           onTap: () {
-            //controller.isSelected.value = false;
+            Provider.of<TaskProvider>(context, listen: false).isSelectedCheck();
           },
           child: Container(
               width: size.width * .14,
